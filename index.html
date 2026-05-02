@@ -94,8 +94,15 @@
         
         @media (max-width: 768px) {
             #joystick-container { display: block; }
-            .modal { padding: 20px; }
-            h1 { font-size: 1.8rem; }
+            .modal { padding: 20px; max-height: 95vh; }
+            h1 { font-size: 1.6rem; }
+            .stat-val { font-size: 1rem; }
+        }
+        @media (max-height: 500px) {
+            .modal { padding: 15px; width: 90%; }
+            h1 { font-size: 1.4rem; margin-bottom: 5px; }
+            .tabs { margin-bottom: 10px; }
+            button { padding: 8px 20px; }
         }
     </style>
 </head>
@@ -126,6 +133,7 @@
                 <div id="section-custom"><div class="color-grid" id="color-picker"></div></div>
                 <div id="section-rank" class="hidden"><ul id="global-rank-list" style="list-style:none"></ul></div>
                 <button id="start-btn" style="width:100%; margin-top:15px">เริ่มเกม</button>
+                <button id="fullscreen-btn" style="width:100%; margin-top:10px; background:var(--glass); border:1px solid var(--primary-neon); color:var(--primary-neon)">เต็มจอ (FULLSCREEN)</button>
                 <button id="logout-btn" style="background:none; border:1px solid #ff007a; color:#ff007a; width:100%; margin-top:8px; font-size:0.7rem">LOGOUT</button>
             </div>
         </div>
@@ -176,7 +184,8 @@
             colorPicker: document.getElementById('color-picker'), gameUI: document.getElementById('game-ui'), powerupBar: document.getElementById('powerup-bar'),
             score: document.getElementById('score'), timer: document.getElementById('timer'), finalScore: document.getElementById('final-score'), 
             newRecord: document.getElementById('new-record'), comboText: document.getElementById('combo-text'), globalRankList: document.getElementById('global-rank-list'),
-            tabCustom: document.getElementById('tab-custom'), tabRank: document.getElementById('tab-rank'), sectionCustom: document.getElementById('section-custom'), sectionRank: document.getElementById('section-rank')
+            tabCustom: document.getElementById('tab-custom'), tabRank: document.getElementById('tab-rank'), sectionCustom: document.getElementById('section-custom'), sectionRank: document.getElementById('section-rank'),
+            fullscreenBtn: document.getElementById('fullscreen-btn')
         };
         const joystick = { container: document.getElementById('joystick-container'), knob: document.getElementById('joystick-knob'), active: false, x: 0, y: 0 };
 
@@ -326,6 +335,22 @@
         }
 
         document.getElementById('start-btn').onclick=startGame; document.getElementById('restart-btn').onclick=startGame; document.getElementById('menu-btn').onclick=showMenu;
+        
+        elements.fullscreenBtn.onclick = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => alert(`Error: ${err.message}`));
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(() => {});
+                }
+            } else {
+                document.exitFullscreen();
+            }
+        };
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resize, 200);
+        });
+
         resize();
     </script>
 </body>
