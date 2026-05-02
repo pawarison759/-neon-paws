@@ -335,17 +335,57 @@
         function endGame() { gameActive=false; clearInterval(timerInterval); cancelAnimationFrame(animationId); elements.finalScore.innerText=score; if(score>currentUser.highscore){currentUser.highscore=score; elements.newRecord.classList.remove('hidden');} currentUser.totalCaught+=Math.floor(score/10); saveUser(currentUser); overlays.gameOver.classList.remove('hidden'); elements.gameUI.classList.add('hidden'); elements.powerupBar.classList.add('hidden'); }
 
         function loop() {
-            if(!gameActive) return; ctx.fillStyle='#05050a'; ctx.fillRect(0,0,world.width,world.height);
+            if(!gameActive || !currentUser) return; 
+            ctx.fillStyle='#05050a'; ctx.fillRect(0,0,world.width,world.height);
+            
             // Dynamic Grid (smaller on mobile to see more board)
-            const gridSize = window.innerWidth < 768 ? 50 : 80;
+            const p = Math.sin(Date.now()/200)*0.05+0.05;
+            const gridSize = window.innerWidth < 768 ? 40 : 80;
             ctx.strokeStyle = `rgba(112,0,255,${0.05+p})`;
             for(let i=0;i<world.width;i+=gridSize){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,world.height);ctx.stroke();} 
             for(let i=0;i<world.height;i+=gridSize){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(world.width,i);ctx.stroke();}
-            ripples = ripples.filter(r=>r.r<300); ripples.forEach(r=>{r.r+=10; r.a-=0.02; ctx.strokeStyle=`rgba(255,255,255,${r.a})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();});
+            
+            ripples = ripples.filter(r=>r.r < 300); 
+            ripples.forEach(r=>{
+                r.r+=10; r.a-=0.02; 
+                ctx.strokeStyle=`rgba(255,255,255,${r.a})`; 
+                ctx.lineWidth=2; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();
+            });
+            
             player.update();
-            items.forEach((it,i)=>{ it.draw(); if(Math.hypot(player.x-it.x,player.y-it.y)<60){ powerups[it.t]=true; document.getElementById(`pw-${it.t}`).classList.add('active'); setTimeout(()=>{powerups[it.t]=false; document.getElementById(`pw-${it.t}`).classList.remove('active');},5000); items.splice(i,1); } });
-            mice.forEach(m=>{ m.update(player); if(Math.hypot(player.x-m.x,player.y-m.y)<60){ const n=Date.now(); if(n-lastCatchTime<1500) combo++; else combo=1; lastCatchTime=n; score+=10*combo; elements.score.innerText=score; if(combo>1){elements.comboText.innerText=`COMBO X${combo}`; elements.comboText.style.opacity=1; setTimeout(()=>elements.comboText.style.opacity=0,800);} ripples.push({x:m.x,y:m.y,r:0,a:0.5}); for(let i=0;i<15;i++) particles.push(new Particle(m.x,m.y,currentUser.color)); m.reset(); } m.draw(); });
-            player.draw(); particles=particles.filter(p=>p.a>0); particles.forEach(p=>{p.update();p.draw();}); animationId=requestAnimationFrame(loop);
+            const playerColor = currentUser ? currentUser.color : '#00f2ff';
+            
+            items.forEach((it,i)=>{ 
+                it.draw(); 
+                if(Math.hypot(player.x-it.x,player.y-it.y)<60){ 
+                    powerups[it.t]=true; 
+                    document.getElementById(`pw-${it.t}`).classList.add('active'); 
+                    setTimeout(()=>{powerups[it.t]=false; document.getElementById(`pw-${it.t}`).classList.remove('active');},5000); 
+                    items.splice(i,1); 
+                } 
+            });
+            
+            mice.forEach(m=>{ 
+                m.update(player); 
+                if(Math.hypot(player.x-m.x,player.y-m.y)<60){ 
+                    const n=Date.now(); 
+                    if(n-lastCatchTime<1500) combo++; else combo=1; 
+                    lastCatchTime=n; score+=10*combo; elements.score.innerText=score; 
+                    if(combo>1){
+                        elements.comboText.innerText=`COMBO X${combo}`; 
+                        elements.comboText.style.opacity=1; 
+                        setTimeout(()=>elements.comboText.style.opacity=0,800);
+                    } 
+                    ripples.push({x:m.x,y:m.y,r:0,a:0.5}); 
+                    for(let i=0;i<15;i++) particles.push(new Particle(m.x,m.y,playerColor)); 
+                    m.reset(); 
+                } 
+                m.draw(); 
+            });
+            player.draw(); 
+            particles=particles.filter(p=>p.a>0); 
+            particles.forEach(p=>{p.update();p.draw();}); 
+            animationId=requestAnimationFrame(loop);
         }
 
         document.getElementById('start-btn').onclick=startGame; document.getElementById('restart-btn').onclick=startGame; document.getElementById('menu-btn').onclick=showMenu;
