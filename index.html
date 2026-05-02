@@ -72,8 +72,8 @@
         .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--primary-neon); }
         
         #powerup-bar {
-            position: absolute; bottom: 30px; right: 30px;
-            display: flex; flex-direction: column; gap: 10px; z-index: 50;
+            position: absolute; bottom: 20px; right: 20px;
+            display: flex; flex-direction: column; gap: 8px; z-index: 50;
         }
         .pw-icon {
             width: 45px; height: 45px; border-radius: 10px; background: var(--glass);
@@ -267,7 +267,12 @@
         }
 
         class Player {
-            constructor() { this.reset(); this.size = 80; this.trail = []; }
+            constructor() { 
+                this.reset(); 
+                this.baseSize = 80;
+                this.size = window.innerWidth < 768 ? 110 : 80; // Larger on mobile
+                this.trail = []; 
+            }
             reset() { this.x = world.width/2; this.y = world.height/2; this.angle = 0; this.trail = []; }
             update() {
                 let dx = 0, dy = 0;
@@ -294,7 +299,10 @@
         }
 
         class Mouse {
-            constructor() { this.reset(); this.size = 40; }
+            constructor() { 
+                this.reset(); 
+                this.size = window.innerWidth < 768 ? 55 : 40; // Larger on mobile
+            }
             reset() { this.x = Math.random()*(world.width-100)+50; this.y = Math.random()*(world.height-100)+50; this.angle = Math.random()*Math.PI*2; }
             update(player) {
                 const dX=this.x-player.x, dY=this.y-player.y, dist=Math.hypot(dX,dY);
@@ -329,8 +337,8 @@
             for(let i=0;i<world.width;i+=80){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,world.height);ctx.stroke();} for(let i=0;i<world.height;i+=80){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(world.width,i);ctx.stroke();}
             ripples = ripples.filter(r=>r.r<300); ripples.forEach(r=>{r.r+=10; r.a-=0.02; ctx.strokeStyle=`rgba(255,255,255,${r.a})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();});
             player.update();
-            items.forEach((it,i)=>{ it.draw(); if(Math.hypot(player.x-it.x,player.y-it.y)<50){ powerups[it.t]=true; document.getElementById(`pw-${it.t}`).classList.add('active'); setTimeout(()=>{powerups[it.t]=false; document.getElementById(`pw-${it.t}`).classList.remove('active');},5000); items.splice(i,1); } });
-            mice.forEach(m=>{ m.update(player); if(Math.hypot(player.x-m.x,player.y-m.y)<50){ const n=Date.now(); if(n-lastCatchTime<1500) combo++; else combo=1; lastCatchTime=n; score+=10*combo; elements.score.innerText=score; if(combo>1){elements.comboText.innerText=`COMBO X${combo}`; elements.comboText.style.opacity=1; setTimeout(()=>elements.comboText.style.opacity=0,800);} ripples.push({x:m.x,y:m.y,r:0,a:0.5}); for(let i=0;i<15;i++) particles.push(new Particle(m.x,m.y,currentUser.color)); m.reset(); } m.draw(); });
+            items.forEach((it,i)=>{ it.draw(); if(Math.hypot(player.x-it.x,player.y-it.y)<60){ powerups[it.t]=true; document.getElementById(`pw-${it.t}`).classList.add('active'); setTimeout(()=>{powerups[it.t]=false; document.getElementById(`pw-${it.t}`).classList.remove('active');},5000); items.splice(i,1); } });
+            mice.forEach(m=>{ m.update(player); if(Math.hypot(player.x-m.x,player.y-m.y)<60){ const n=Date.now(); if(n-lastCatchTime<1500) combo++; else combo=1; lastCatchTime=n; score+=10*combo; elements.score.innerText=score; if(combo>1){elements.comboText.innerText=`COMBO X${combo}`; elements.comboText.style.opacity=1; setTimeout(()=>elements.comboText.style.opacity=0,800);} ripples.push({x:m.x,y:m.y,r:0,a:0.5}); for(let i=0;i<15;i++) particles.push(new Particle(m.x,m.y,currentUser.color)); m.reset(); } m.draw(); });
             player.draw(); particles=particles.filter(p=>p.a>0); particles.forEach(p=>{p.update();p.draw();}); animationId=requestAnimationFrame(loop);
         }
 
