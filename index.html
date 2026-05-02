@@ -56,7 +56,7 @@
         #joystick-container {
             position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px;
             background: rgba(255,255,255,0.05); border-radius: 50%; border: 2px solid var(--glass-border);
-            z-index: 60; display: none; touch-action: none;
+            z-index: 60; display: block; touch-action: none; /* Always show */
         }
         #joystick-knob {
             position: absolute; top: 50%; left: 50%; width: 50px; height: 50px;
@@ -257,6 +257,9 @@
             joystick.knob.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
         };
         joystick.container.addEventListener('touchstart', (e) => { joystick.active = true; handleJoystick(e); });
+        joystick.container.addEventListener('mousedown', (e) => { joystick.active = true; handleJoystick(e); });
+        window.addEventListener('mousemove', (e) => { if(joystick.active) handleJoystick(e); });
+        window.addEventListener('mouseup', () => { joystick.active = false; joystick.x = 0; joystick.y = 0; joystick.knob.style.transform = 'translate(-50%, -50%)'; });
         window.addEventListener('touchmove', (e) => { if(joystick.active) handleJoystick(e); });
         window.addEventListener('touchend', () => { joystick.active = false; joystick.x = 0; joystick.y = 0; joystick.knob.style.transform = 'translate(-50%, -50%)'; });
 
@@ -333,8 +336,11 @@
 
         function loop() {
             if(!gameActive) return; ctx.fillStyle='#05050a'; ctx.fillRect(0,0,world.width,world.height);
-            const p = Math.sin(Date.now()/200)*0.05+0.05; ctx.strokeStyle=`rgba(112,0,255,${0.05+p})`;
-            for(let i=0;i<world.width;i+=80){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,world.height);ctx.stroke();} for(let i=0;i<world.height;i+=80){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(world.width,i);ctx.stroke();}
+            // Dynamic Grid (smaller on mobile to see more board)
+            const gridSize = window.innerWidth < 768 ? 50 : 80;
+            ctx.strokeStyle = `rgba(112,0,255,${0.05+p})`;
+            for(let i=0;i<world.width;i+=gridSize){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,world.height);ctx.stroke();} 
+            for(let i=0;i<world.height;i+=gridSize){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(world.width,i);ctx.stroke();}
             ripples = ripples.filter(r=>r.r<300); ripples.forEach(r=>{r.r+=10; r.a-=0.02; ctx.strokeStyle=`rgba(255,255,255,${r.a})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();});
             player.update();
             items.forEach((it,i)=>{ it.draw(); if(Math.hypot(player.x-it.x,player.y-it.y)<60){ powerups[it.t]=true; document.getElementById(`pw-${it.t}`).classList.add('active'); setTimeout(()=>{powerups[it.t]=false; document.getElementById(`pw-${it.t}`).classList.remove('active');},5000); items.splice(i,1); } });
