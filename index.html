@@ -54,9 +54,9 @@
 
         /* Mobile Controls */
         #joystick-container {
-            position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px;
-            background: rgba(255,255,255,0.05); border-radius: 50%; border: 2px solid var(--glass-border);
-            z-index: 60; display: block; touch-action: none; /* Always show */
+            position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 50%; border: 2px solid var(--glass-border);
+            z-index: 60; display: block; touch-action: none;
         }
         #joystick-knob {
             position: absolute; top: 50%; left: 50%; width: 50px; height: 50px;
@@ -72,8 +72,8 @@
         .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--primary-neon); }
         
         #powerup-bar {
-            position: absolute; bottom: 20px; right: 20px;
-            display: flex; flex-direction: column; gap: 8px; z-index: 50;
+            position: absolute; bottom: 50px; right: 30px;
+            display: flex; flex-direction: column; gap: 12px; z-index: 50;
         }
         .pw-icon {
             width: 45px; height: 45px; border-radius: 10px; background: var(--glass);
@@ -297,7 +297,9 @@
             draw() {
                 this.trail.forEach((t,i) => { ctx.globalAlpha=t.a*(1-i/10); ctx.fillStyle=currentUser.color; ctx.beginPath(); ctx.arc(t.x,t.y,(this.size/4)*(1-i/10),0,Math.PI*2); ctx.fill(); });
                 ctx.globalAlpha=1; ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.angle+Math.PI/2);
-                ctx.shadowBlur=15; ctx.shadowColor=currentUser.color; ctx.strokeStyle=currentUser.color; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-15,20); ctx.lineTo(0,-20); ctx.lineTo(15,20); ctx.stroke(); ctx.restore();
+                ctx.shadowBlur=20; ctx.shadowColor=currentUser.color; ctx.strokeStyle=currentUser.color; ctx.lineWidth=4; 
+                ctx.beginPath(); ctx.moveTo(-15,20); ctx.lineTo(0,-25); ctx.lineTo(15,20); ctx.closePath(); ctx.stroke();
+                ctx.strokeStyle='white'; ctx.lineWidth=1; ctx.stroke(); ctx.restore();
             }
         }
 
@@ -315,7 +317,12 @@
                 const pad=20; if(this.x<pad||this.x>world.width-pad){this.angle=Math.PI-this.angle; this.x=this.x<pad?pad:world.width-pad;}
                 if(this.y<pad||this.y>world.height-pad){this.angle=-this.angle; this.y=this.y<pad?pad:world.height-pad;}
             }
-            draw() { ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.angle+Math.PI/2); ctx.shadowBlur=10; ctx.shadowColor='#ff007a'; ctx.strokeStyle='#ff007a'; ctx.lineWidth=2; ctx.strokeRect(-10,-10,20,20); ctx.restore(); }
+            draw() { 
+                ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.angle+Math.PI/2); 
+                ctx.shadowBlur=15; ctx.shadowColor='#ff007a'; ctx.strokeStyle='#ff007a'; ctx.lineWidth=3; 
+                ctx.strokeRect(-12,-12,24,24); ctx.strokeStyle='white'; ctx.lineWidth=1; ctx.strokeRect(-12,-12,24,24); 
+                ctx.restore(); 
+            }
         }
 
         class Item {
@@ -339,9 +346,10 @@
             ctx.fillStyle='#05050a'; ctx.fillRect(0,0,world.width,world.height);
             
             // Dynamic Grid (smaller on mobile to see more board)
-            const p = Math.sin(Date.now()/200)*0.05+0.05;
-            const gridSize = window.innerWidth < 768 ? 40 : 80;
-            ctx.strokeStyle = `rgba(112,0,255,${0.05+p})`;
+            const p = Math.sin(Date.now()/200)*0.1+0.1;
+            const gridSize = window.innerWidth < 768 ? 45 : 80;
+            ctx.strokeStyle = `rgba(112,0,255,${0.1+p})`;
+            ctx.lineWidth = 1;
             for(let i=0;i<world.width;i+=gridSize){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,world.height);ctx.stroke();} 
             for(let i=0;i<world.height;i+=gridSize){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(world.width,i);ctx.stroke();}
             
@@ -389,6 +397,11 @@
         }
 
         document.getElementById('start-btn').onclick=startGame; document.getElementById('restart-btn').onclick=startGame; document.getElementById('menu-btn').onclick=showMenu;
+        
+        window.onload = () => {
+            elements.username.focus();
+            resize();
+        };
         
         elements.fullscreenBtn.onclick = () => {
             if (!document.fullscreenElement) {
