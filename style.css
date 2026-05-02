@@ -1,0 +1,189 @@
+:root {
+    --bg-color: #0a0a0f;
+    --primary-neon: #00f2ff;
+    --secondary-neon: #7000ff;
+    --accent-neon: #ff007a;
+    --text-color: #ffffff;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0f 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameCanvas {
+    display: block;
+}
+
+#ui-layer {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 40px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#score-board, #timer-board {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    padding: 10px 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+#score, #timer {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-neon);
+    text-shadow: 0 0 10px var(--primary-neon);
+}
+
+#timer {
+    color: var(--accent-neon);
+    text-shadow: 0 0 10px var(--accent-neon);
+}
+
+/* Modals & Overlays */
+#overlay, #game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    transition: opacity 0.4s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.modal {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 50px;
+    border-radius: 30px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 0 50px rgba(112, 0, 255, 0.2);
+    animation: modalPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalPop {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+h1 {
+    font-size: 3.5rem;
+    margin-bottom: 10px;
+    background: linear-gradient(to right, var(--primary-neon), var(--secondary-neon));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 5px;
+}
+
+h2 {
+    font-size: 2.5rem;
+    color: var(--accent-neon);
+    margin-bottom: 20px;
+}
+
+p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.controls-info {
+    margin-bottom: 40px;
+}
+
+.key {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 700;
+    margin: 0 5px;
+    color: var(--primary-neon);
+}
+
+button {
+    background: linear-gradient(45deg, var(--secondary-neon), var(--primary-neon));
+    border: none;
+    padding: 15px 45px;
+    border-radius: 50px;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 30px rgba(0, 242, 255, 0.5);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.final-score-container {
+    margin-bottom: 30px;
+}
+
+#final-score {
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--primary-neon);
+    display: block;
+}

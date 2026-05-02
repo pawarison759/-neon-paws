@@ -1,0 +1,18 @@
+{
+  "name": "Neon Paws: Pro Edition",
+  "short_name": "Neon Paws",
+  "description": "Premium Neon Cat Chasing Mouse Game",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#05050a",
+  "theme_color": "#7000ff",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/616/616430.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

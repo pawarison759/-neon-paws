@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Paws: Pro Edition</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#7000ff">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #05050a;
+            --primary-neon: #00f2ff;
+            --secondary-neon: #7000ff;
+            --accent-neon: #ff007a;
+            --text-color: #ffffff;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); overflow: hidden; height: 100vh; width: 100%; }
+
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; touch-action: none; }
+        canvas { display: block; touch-action: none; }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px);
+            display: flex; justify-content: center; align-items: center; z-index: 100;
+        }
+        .hidden { display: none !important; }
+
+        .modal {
+            background: var(--glass); border: 1px solid var(--glass-border);
+            padding: 30px; border-radius: 30px; text-align: center;
+            width: 500px; max-width: 90%; box-shadow: 0 0 50px rgba(112, 0, 255, 0.2);
+            max-height: 85vh; overflow-y: auto; pointer-events: auto;
+        }
+
+        h1 { font-size: 2.2rem; margin-bottom: 15px; background: linear-gradient(to right, #00f2ff, #7000ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .auth-form input {
+            width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            color: white; font-size: 1rem;
+        }
+        
+        .color-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 15px 0; }
+        .color-opt { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
+        .color-opt.active { border-color: white; transform: scale(1.1); }
+
+        /* Mobile Controls */
+        #joystick-container {
+            position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px;
+            background: rgba(255,255,255,0.05); border-radius: 50%; border: 2px solid var(--glass-border);
+            z-index: 60; display: none; touch-action: none;
+        }
+        #joystick-knob {
+            position: absolute; top: 50%; left: 50%; width: 50px; height: 50px;
+            background: var(--primary-neon); border-radius: 50%; transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px var(--primary-neon); pointer-events: none;
+        }
+
+        #game-ui {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 15px 25px;
+            display: flex; justify-content: space-between; pointer-events: none; z-index: 50;
+        }
+        .stat-box { background: var(--glass); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center; }
+        .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--primary-neon); }
+        
+        #powerup-bar {
+            position: absolute; bottom: 30px; right: 30px;
+            display: flex; flex-direction: column; gap: 10px; z-index: 50;
+        }
+        .pw-icon {
+            width: 45px; height: 45px; border-radius: 10px; background: var(--glass);
+            border: 2px solid var(--glass-border); display: flex; justify-content: center;
+            align-items: center; font-size: 1.2rem; opacity: 0.3; pointer-events: auto;
+        }
+        .pw-icon.active { opacity: 1; border-color: var(--primary-neon); box-shadow: 0 0 15px var(--primary-neon); }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        .tab { padding: 6px 15px; border-radius: 15px; background: rgba(255,255,255,0.05); cursor: pointer; font-size: 0.8rem; }
+        .tab.active { background: var(--primary-neon); color: black; font-weight: 700; }
+
+        .leaderboard-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        .rank-badge { width: 25px; height: 25px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 700; margin-right: 10px; font-size: 0.8rem; }
+        .rank-1 { background: gold; color: black; }
+
+        button { background: linear-gradient(45deg, var(--secondary-neon), var(--primary-neon)); border: none; padding: 10px 25px; border-radius: 50px; color: white; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; }
+        
+        @media (max-width: 768px) {
+            #joystick-container { display: block; }
+            .modal { padding: 20px; }
+            h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Auth -->
+        <div id="auth-overlay" class="overlay">
+            <div class="modal">
+                <h1 id="auth-title">NEON PAWS</h1>
+                <div class="auth-form">
+                    <input type="text" id="username" placeholder="Username">
+                    <input type="password" id="password" placeholder="Password">
+                    <button id="auth-btn" style="width:100%">ยืนยัน</button>
+                    <span id="auth-toggle" class="toggle-link" style="display:block; padding:10px; cursor:pointer; color:var(--primary-neon)">สมัครสมาชิกที่นี่</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu -->
+        <div id="menu-overlay" class="overlay hidden">
+            <div class="modal">
+                <h1>สวัสดี, <span id="user-display">User</span></h1>
+                <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px">
+                    <div class="stat-box" style="flex:1"><div class="label" style="font-size:0.6rem">HI-SCORE</div><div id="user-highscore" class="stat-val">0</div></div>
+                    <div class="stat-box" style="flex:1"><div class="label" style="font-size:0.6rem">TOTAL</div><div id="user-total" class="stat-val">0</div></div>
+                </div>
+                <div class="tabs"><div id="tab-custom" class="tab active">ปรับแต่ง</div><div id="tab-rank" class="tab">อันดับ</div></div>
+                <div id="section-custom"><div class="color-grid" id="color-picker"></div></div>
+                <div id="section-rank" class="hidden"><ul id="global-rank-list" style="list-style:none"></ul></div>
+                <button id="start-btn" style="width:100%; margin-top:15px">เริ่มเกม</button>
+                <button id="logout-btn" style="background:none; border:1px solid #ff007a; color:#ff007a; width:100%; margin-top:8px; font-size:0.7rem">LOGOUT</button>
+            </div>
+        </div>
+
+        <!-- Game Over -->
+        <div id="game-over-overlay" class="overlay hidden">
+            <div class="modal">
+                <h2 style="color:var(--accent-neon)">จบเกม!</h2>
+                <h1 id="final-score" style="font-size:4rem">0</h1>
+                <div id="new-record" class="hidden" style="color:var(--primary-neon); font-weight:700; margin-bottom:10px">NEW RECORD!</div>
+                <button id="restart-btn" style="width:100%">เล่นอีกครั้ง</button>
+                <button id="menu-btn" style="background:var(--secondary-neon); width:100%; margin-top:8px">กลับเมนู</button>
+            </div>
+        </div>
+
+        <!-- Mobile Controls -->
+        <div id="joystick-container"><div id="joystick-knob"></div></div>
+
+        <!-- Game UI -->
+        <div id="game-ui" class="hidden">
+            <div class="stat-box"><div id="score" class="stat-val">0</div></div>
+            <div class="stat-box"><div id="timer" class="stat-val">60</div></div>
+        </div>
+
+        <div id="powerup-bar" class="hidden">
+            <div id="pw-speed" class="pw-icon">⚡</div>
+            <div id="pw-magnet" class="pw-icon">🧲</div>
+            <div id="pw-freeze" class="pw-icon">❄️</div>
+        </div>
+
+        <div id="combo-text" style="position:absolute; top:20%; left:50%; transform:translateX(-50%); font-size:2.5rem; font-weight:900; color:var(--accent-neon); text-shadow:0 0 20px var(--accent-neon); pointer-events:none; opacity:0; z-index:40;">COMBO</div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        // PWA Registration with error handling for file://
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+        const overlays = { auth: document.getElementById('auth-overlay'), menu: document.getElementById('menu-overlay'), gameOver: document.getElementById('game-over-overlay') };
+        const elements = { 
+            username: document.getElementById('username'), password: document.getElementById('password'), 
+            authBtn: document.getElementById('auth-btn'), authToggle: document.getElementById('auth-toggle'), authTitle: document.getElementById('auth-title'),
+            userDisplay: document.getElementById('user-display'), userHighscore: document.getElementById('user-highscore'), userTotal: document.getElementById('user-total'),
+            colorPicker: document.getElementById('color-picker'), gameUI: document.getElementById('game-ui'), powerupBar: document.getElementById('powerup-bar'),
+            score: document.getElementById('score'), timer: document.getElementById('timer'), finalScore: document.getElementById('final-score'), 
+            newRecord: document.getElementById('new-record'), comboText: document.getElementById('combo-text'), globalRankList: document.getElementById('global-rank-list'),
+            tabCustom: document.getElementById('tab-custom'), tabRank: document.getElementById('tab-rank'), sectionCustom: document.getElementById('section-custom'), sectionRank: document.getElementById('section-rank')
+        };
+        const joystick = { container: document.getElementById('joystick-container'), knob: document.getElementById('joystick-knob'), active: false, x: 0, y: 0 };
+
+        const CAT_COLORS = [{hex:'#00f2ff'}, {hex:'#ff007a'}, {hex:'#39ff14'}, {hex:'#fff01f'}, {hex:'#bc13fe'}, {hex:'#ff5f1f'}, {hex:'#ffffff'}];
+        let currentUser = null, isRegister = false, gameActive = false, score = 0, timeLeft = 60, combo = 1, lastCatchTime = 0, world = {width:0, height:0}, animationId, timerInterval, powerups = {speed:false, magnet:false, freeze:false};
+
+        function getUsers() { return JSON.parse(localStorage.getItem('neon_pro_users')) || {}; }
+        function saveUser(user) { const users = getUsers(); users[user.id] = user; localStorage.setItem('neon_pro_users', JSON.stringify(users)); }
+
+        const toggleAuth = () => { isRegister = !isRegister; elements.authTitle.innerText = isRegister ? 'REGISTER' : 'LOGIN'; elements.authToggle.innerText = isRegister ? 'LOGIN HERE' : 'REGISTER HERE'; };
+        elements.authToggle.onclick = toggleAuth;
+        elements.authToggle.ontouchend = (e) => { e.preventDefault(); toggleAuth(); };
+
+        elements.authBtn.onclick = () => {
+            const id = elements.username.value.trim(), pass = elements.password.value;
+            if(!id || !pass) return alert('กรุณากรอกข้อมูลให้ครบ');
+            const users = getUsers();
+            if(isRegister) { if(users[id]) return alert('ชื่อนี้มีอยู่แล้ว'); saveUser({id, pass, color:'#00f2ff', highscore:0, totalCaught:0}); isRegister = false; toggleAuth(); alert('สมัครสมาชิกสำเร็จ!'); }
+            else { if(users[id] && users[id].pass === pass) { currentUser = users[id]; showMenu(); } else alert('ID หรือ Password ไม่ถูกต้อง'); }
+        };
+
+        elements.tabCustom.onclick = () => { elements.tabCustom.classList.add('active'); elements.tabRank.classList.remove('active'); elements.sectionCustom.classList.remove('hidden'); elements.sectionRank.classList.add('hidden'); };
+        elements.tabRank.onclick = () => { elements.tabRank.classList.add('active'); elements.tabCustom.classList.remove('active'); elements.sectionRank.classList.remove('hidden'); elements.sectionCustom.classList.add('hidden'); updateGlobalRanking(); };
+
+        function updateGlobalRanking() {
+            const users = Object.values(getUsers()).sort((a,b) => b.totalCaught - a.totalCaught);
+            elements.globalRankList.innerHTML = users.slice(0, 10).map((u, i) => `
+                <li class="leaderboard-item">
+                    <span style="display:flex; align-items:center"><div class="rank-badge ${i<3?'rank-1':''}">${i+1}</div>${u.id}</span>
+                    <span class="score-val">${u.totalCaught} ตัว</span>
+                </li>`).join('');
+        }
+
+        function showMenu() {
+            overlays.auth.classList.add('hidden'); overlays.menu.classList.remove('hidden'); overlays.gameOver.classList.add('hidden'); elements.gameUI.classList.add('hidden'); elements.powerupBar.classList.add('hidden');
+            elements.userDisplay.innerText = currentUser.id; elements.userHighscore.innerText = currentUser.highscore; elements.userTotal.innerText = currentUser.totalCaught;
+            elements.colorPicker.innerHTML = '';
+            CAT_COLORS.forEach(c => {
+                const opt = document.createElement('div'); opt.className = `color-opt ${currentUser.color === c.hex ? 'active' : ''}`; opt.style.background = c.hex;
+                opt.onclick = () => { currentUser.color = c.hex; saveUser(currentUser); showMenu(); }; elements.colorPicker.appendChild(opt);
+            });
+            updateGlobalRanking();
+        }
+
+        document.getElementById('logout-btn').onclick = () => { currentUser = null; overlays.auth.classList.remove('hidden'); overlays.menu.classList.add('hidden'); };
+
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            world.width = window.innerWidth; world.height = window.innerHeight;
+            canvas.width = world.width * dpr; canvas.height = world.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        window.addEventListener('resize', resize); resize();
+
+        const keys = new Set();
+        window.addEventListener('keydown', e => keys.add(e.code));
+        window.addEventListener('keyup', e => keys.delete(e.code));
+
+        const handleJoystick = (e) => {
+            if(!joystick.active) return;
+            const touch = e.touches ? e.touches[0] : e;
+            const rect = joystick.container.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2, centerY = rect.top + rect.height / 2;
+            const dx = touch.clientX - centerX, dy = touch.clientY - centerY;
+            const dist = Math.min(60, Math.hypot(dx, dy));
+            const angle = Math.atan2(dy, dx);
+            joystick.x = Math.cos(angle) * (dist / 60);
+            joystick.y = Math.sin(angle) * (dist / 60);
+            joystick.knob.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
+        };
+        joystick.container.addEventListener('touchstart', (e) => { joystick.active = true; handleJoystick(e); });
+        window.addEventListener('touchmove', (e) => { if(joystick.active) handleJoystick(e); });
+        window.addEventListener('touchend', () => { joystick.active = false; joystick.x = 0; joystick.y = 0; joystick.knob.style.transform = 'translate(-50%, -50%)'; });
+
+        class Particle {
+            constructor(x,y,c) { this.x=x; this.y=y; this.size=Math.random()*4+1; this.vx=(Math.random()-0.5)*12; this.vy=(Math.random()-0.5)*12; this.c=c; this.a=1; }
+            update() { this.x+=this.vx; this.y+=this.vy; this.a-=0.02; }
+            draw() { ctx.globalAlpha=this.a; ctx.fillStyle=this.c; ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; }
+        }
+
+        class Player {
+            constructor() { this.reset(); this.size = 80; this.trail = []; }
+            reset() { this.x = world.width/2; this.y = world.height/2; this.angle = 0; this.trail = []; }
+            update() {
+                let dx = 0, dy = 0;
+                if (keys.has('ArrowUp') || keys.has('KeyW')) dy -= 1;
+                if (keys.has('ArrowDown') || keys.has('KeyS')) dy += 1;
+                if (keys.has('ArrowLeft') || keys.has('KeyA')) dx -= 1;
+                if (keys.has('ArrowRight') || keys.has('KeyD')) dx += 1;
+                if (joystick.active) { dx = joystick.x; dy = joystick.y; }
+                let speed = powerups.speed ? 14 : 9;
+                if (dx !== 0 || dy !== 0) {
+                    const mag = Math.hypot(dx, dy);
+                    this.angle = Math.atan2(dy, dx);
+                    this.x += (dx / mag) * speed; this.y += (dy / mag) * speed;
+                    this.trail.unshift({x:this.x, y:this.y, a:0.5}); if(this.trail.length > 10) this.trail.pop();
+                }
+                const pad = this.size/2 + 5;
+                this.x = Math.max(pad, Math.min(world.width-pad, this.x)); this.y = Math.max(pad, Math.min(world.height-pad, this.y));
+            }
+            draw() {
+                this.trail.forEach((t,i) => { ctx.globalAlpha=t.a*(1-i/10); ctx.fillStyle=currentUser.color; ctx.beginPath(); ctx.arc(t.x,t.y,(this.size/4)*(1-i/10),0,Math.PI*2); ctx.fill(); });
+                ctx.globalAlpha=1; ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.angle+Math.PI/2);
+                ctx.shadowBlur=15; ctx.shadowColor=currentUser.color; ctx.strokeStyle=currentUser.color; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-15,20); ctx.lineTo(0,-20); ctx.lineTo(15,20); ctx.stroke(); ctx.restore();
+            }
+        }
+
+        class Mouse {
+            constructor() { this.reset(); this.size = 40; }
+            reset() { this.x = Math.random()*(world.width-100)+50; this.y = Math.random()*(world.height-100)+50; this.angle = Math.random()*Math.PI*2; }
+            update(player) {
+                const dX=this.x-player.x, dY=this.y-player.y, dist=Math.hypot(dX,dY);
+                let moveSpeed = powerups.freeze?0.8:3.5; if(dist<150) {this.angle+=(Math.atan2(dY,dX)-this.angle)*0.15; moveSpeed*=2;}
+                if(powerups.magnet && dist<250) {this.x-=(dX/dist)*5; this.y-=(dY/dist)*5;}
+                this.x+=Math.cos(this.angle)*moveSpeed; this.y+=Math.sin(this.angle)*moveSpeed;
+                const pad=20; if(this.x<pad||this.x>world.width-pad){this.angle=Math.PI-this.angle; this.x=this.x<pad?pad:world.width-pad;}
+                if(this.y<pad||this.y>world.height-pad){this.angle=-this.angle; this.y=this.y<pad?pad:world.height-pad;}
+            }
+            draw() { ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.angle+Math.PI/2); ctx.shadowBlur=10; ctx.shadowColor='#ff007a'; ctx.strokeStyle='#ff007a'; ctx.lineWidth=2; ctx.strokeRect(-10,-10,20,20); ctx.restore(); }
+        }
+
+        class Item {
+            constructor(t,x,y) { this.t=t; this.x=x; this.y=y; this.c = t==='speed'?'#fff01f':t==='magnet'?'#bc13fe':'#00f2ff'; this.i=t==='speed'?'⚡':t==='magnet'?'🧲':'❄️'; }
+            draw() { ctx.save(); ctx.translate(this.x,this.y); ctx.shadowBlur=15; ctx.shadowColor=this.c; ctx.fillStyle=this.c; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.fill(); ctx.fillStyle='white'; ctx.font='18px Outfit'; ctx.textAlign='center'; ctx.fillText(this.i,0,6); ctx.restore(); }
+        }
+
+        let player = new Player(), mice = [], particles = [], items = [], ripples = [];
+
+        function startGame() {
+            score=0; timeLeft=60; combo=1; mice=Array.from({length:7},()=>new Mouse()); particles=[]; items=[]; ripples=[]; powerups={speed:false,magnet:false,freeze:false}; player.reset();
+            elements.score.innerText=score; elements.timer.innerText=timeLeft; overlays.menu.classList.add('hidden'); overlays.gameOver.classList.add('hidden'); elements.gameUI.classList.remove('hidden'); elements.powerupBar.classList.remove('hidden');
+            gameActive=true; if(timerInterval) clearInterval(timerInterval); timerInterval=setInterval(()=>{ timeLeft--; elements.timer.innerText=timeLeft; if(timeLeft<=0) endGame(); if(timeLeft%10===0) items.push(new Item(['speed','magnet','freeze'][Math.floor(Math.random()*3)], Math.random()*world.width, Math.random()*world.height)); },1000);
+            loop();
+        }
+
+        function endGame() { gameActive=false; clearInterval(timerInterval); cancelAnimationFrame(animationId); elements.finalScore.innerText=score; if(score>currentUser.highscore){currentUser.highscore=score; elements.newRecord.classList.remove('hidden');} currentUser.totalCaught+=Math.floor(score/10); saveUser(currentUser); overlays.gameOver.classList.remove('hidden'); elements.gameUI.classList.add('hidden'); elements.powerupBar.classList.add('hidden'); }
+
+        function loop() {
+            if(!gameActive) return; ctx.fillStyle='#05050a'; ctx.fillRect(0,0,world.width,world.height);
+            const p = Math.sin(Date.now()/200)*0.05+0.05; ctx.strokeStyle=`rgba(112,0,255,${0.05+p})`;
+            for(let i=0;i<world.width;i+=80){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,world.height);ctx.stroke();} for(let i=0;i<world.height;i+=80){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(world.width,i);ctx.stroke();}
+            ripples = ripples.filter(r=>r.r<300); ripples.forEach(r=>{r.r+=10; r.a-=0.02; ctx.strokeStyle=`rgba(255,255,255,${r.a})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();});
+            player.update();
+            items.forEach((it,i)=>{ it.draw(); if(Math.hypot(player.x-it.x,player.y-it.y)<50){ powerups[it.t]=true; document.getElementById(`pw-${it.t}`).classList.add('active'); setTimeout(()=>{powerups[it.t]=false; document.getElementById(`pw-${it.t}`).classList.remove('active');},5000); items.splice(i,1); } });
+            mice.forEach(m=>{ m.update(player); if(Math.hypot(player.x-m.x,player.y-m.y)<50){ const n=Date.now(); if(n-lastCatchTime<1500) combo++; else combo=1; lastCatchTime=n; score+=10*combo; elements.score.innerText=score; if(combo>1){elements.comboText.innerText=`COMBO X${combo}`; elements.comboText.style.opacity=1; setTimeout(()=>elements.comboText.style.opacity=0,800);} ripples.push({x:m.x,y:m.y,r:0,a:0.5}); for(let i=0;i<15;i++) particles.push(new Particle(m.x,m.y,currentUser.color)); m.reset(); } m.draw(); });
+            player.draw(); particles=particles.filter(p=>p.a>0); particles.forEach(p=>{p.update();p.draw();}); animationId=requestAnimationFrame(loop);
+        }
+
+        document.getElementById('start-btn').onclick=startGame; document.getElementById('restart-btn').onclick=startGame; document.getElementById('menu-btn').onclick=showMenu;
+        resize();
+    </script>
+</body>
+</html>
